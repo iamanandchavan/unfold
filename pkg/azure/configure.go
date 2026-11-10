@@ -190,7 +190,7 @@ func getPlans(productID string) ([]string, error) {
 
 		return ids, nil
 	default:
-		b, _ := json.Marshal(resp.Body)
-		return nil, fmt.Errorf("marketplace returned %v for getPlans with response %v", resp.StatusCode, string(b))
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("marketplace returned %v for getPlans with response %v", resp.StatusCode, helpers.GetErrorResponseBody(b))
 	}
 }
