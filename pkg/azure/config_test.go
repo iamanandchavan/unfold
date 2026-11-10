@@ -3,6 +3,7 @@ package azure
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 func TestStartService(t *testing.T) {
@@ -79,5 +80,18 @@ func prepareConfig() {
 	instances = map[int]*AZService{
 		managementResourceIndex: nil,
 		graphResourceIndex:      nil,
+	}
+}
+
+func TestStartServiceSetsHTTPTimeout(t *testing.T) {
+	t.Setenv("UNFOLD_HTTP_TIMEOUT", "7s")
+	prepareConfig()
+	if err := StartService(); err != nil {
+		t.Fatal(err)
+	}
+	for idx, svc := range instances {
+		if svc.httpClient.Timeout != 7*time.Second {
+			t.Errorf("instance %d timeout = %v, want 7s", idx, svc.httpClient.Timeout)
+		}
 	}
 }

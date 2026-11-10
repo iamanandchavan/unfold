@@ -158,6 +158,14 @@ export GOOGLE_GCP_DOMAIN="@yourdomain.com"
 export GOOGLE_JWK_URL="https://your-jwk-endpoint.com"
 ```
 
+#### HTTP Timeout
+Every request to Azure and Google (including OAuth token requests) is bounded by a per-request timeout:
+
+```bash
+# Optional: Go duration, defaults to 30s
+export UNFOLD_HTTP_TIMEOUT="45s"
+```
+
 ### Configuration Files
 
 #### Azure Offers File
