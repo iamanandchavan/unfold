@@ -44,7 +44,7 @@ func Search(id string, offer string) string {
 }
 
 // GetPrivateAudienceListForOffer makes a GET request to the Partner Center API
-// to retrieve the private audience list for a specified offer.
+// to retrieve the private audience entries of all plans of a specified offer.
 func GetPrivateAudienceListForOffer(offerID string) (TreeResource, error) {
 	reqURL := fmt.Sprintf("/rp/product-ingestion/resource-tree/product/%s", offerID)
 	url := instances[graphResourceIndex].BaseURL + reqURL
@@ -56,18 +56,21 @@ func GetPrivateAudienceListForOffer(offerID string) (TreeResource, error) {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		var res Resources
-		json.NewDecoder(resp.Body).Decode(&res) //nolint:errcheck
-		for _, obj := range res.Resources {
-			if len(obj.PrivateAudiences) > 0 {
-				return obj, nil
-			}
-		}
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return TreeResource{}, fmt.Errorf("marketplace returned %d with response \n%v", resp.StatusCode, helpers.GetErrorResponseBody(b))
 	}
-	resBody := map[string]any{}
-	b, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(b, &resBody) //nolint:errcheck
-	mb, _ := json.MarshalIndent(resBody, "", " ")
-	return TreeResource{}, fmt.Errorf("marketplace returned %d with response \n%v", resp.StatusCode, string(mb))
+
+	var res Resources
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return TreeResource{}, fmt.Errorf("json decode %w", err)
+	}
+
+	// Private audiences are configured per plan, so merge every plan's
+	// audience; an offer without any audience is a valid, empty result.
+	var merged TreeResource
+	for _, obj := range res.Resources {
+		merged.PrivateAudiences = append(merged.PrivateAudiences, obj.PrivateAudiences...)
+	}
+	return merged, nil
 }
