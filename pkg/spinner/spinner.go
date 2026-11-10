@@ -2,9 +2,15 @@ package spinner
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"time"
+)
+
+const (
+	hideCursor = "\033[?25l"
+	showCursor = "\033[?25h"
 )
 
 // Type represents the type of spinner
@@ -25,7 +31,19 @@ var (
 	classicFrames    = []string{"|", "/", "-", "\\"}
 	dualBallFrames   = []string{" ·", "● ", "●●", " ●", "· "}
 	circleFrames     = []string{"◐", "◓", "◑", "◒"}
+
+	// out receives the spinner frames and cursor control sequences. It is
+	// stderr so that stdout carries only the command result.
+	out io.Writer = os.Stderr
+	// interactive reports whether out is a terminal; nothing is drawn otherwise.
+	interactive = isTerminal(os.Stderr)
 )
+
+// isTerminal reports whether f is a character device such as a terminal.
+func isTerminal(f *os.File) bool {
+	fi, err := f.Stat()
+	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+}
 
 // Spinner represents the cli spinner
 type Spinner struct {
@@ -33,11 +51,17 @@ type Spinner struct {
 	stop     chan bool
 	done     chan bool
 	exitFunc func(int)
+	out      io.Writer
+	enabled  bool
 }
 
 // Start starts the spinner
 func (s *Spinner) Start() {
-	fmt.Print("\033[?25l") // Hide cursor
+	if !s.enabled {
+		close(s.done)
+		return
+	}
+	fmt.Fprint(s.out, hideCursor)
 	s.run()
 }
 
@@ -67,6 +91,8 @@ func Get(spinnerType Type) *Spinner {
 		stop:     make(chan bool, 1),
 		done:     make(chan bool),
 		exitFunc: os.Exit,
+		out:      out,
+		enabled:  interactive,
 	}
 }
 
@@ -77,22 +103,30 @@ func (s *Spinner) run() {
 	for {
 		select {
 		case <-osCue:
-			ShowCursor()
+			fmt.Fprint(s.out, showCursor)
 			s.exitFunc(0)
 		case <-s.stop:
-			fmt.Printf("\r \r")
-			ShowCursor()
+			fmt.Fprint(s.out, "\r \r"+showCursor)
 			s.done <- true
 			return
 		default:
-			fmt.Printf("\r%s", s.frames[i%len(s.frames)])
+			fmt.Fprintf(s.out, "\r%s", s.frames[i%len(s.frames)])
 			i++
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
 
-// ShowCursor shows the cursor
+// ShowCursor shows the cursor when the spinner output is a terminal.
 func ShowCursor() {
-	fmt.Print("\033[?25h") // Show cursor
+	if interactive {
+		fmt.Fprint(out, showCursor)
+	}
+}
+
+// ClearLine erases the spinner frame when the spinner output is a terminal.
+func ClearLine() {
+	if interactive {
+		fmt.Fprint(out, "\r \r")
+	}
 }
