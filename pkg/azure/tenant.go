@@ -62,18 +62,16 @@ func (a *TenantFinder) GetTenantBySubscriptionID(id string) ([]string, error) {
 	reqURL := fmt.Sprintf("/subscriptions/%s?api-version=2022-12-01", id)
 
 	url := instances[managementResourceIndex].BaseURL + reqURL
-	resp, _ := instances[managementResourceIndex].httpClient.Get(url)
-
-	// Precautionary check for server timeouts or outages
-	if resp != nil && resp.Body != nil {
-		// Decode the response body to the standard error format
-		err := json.NewDecoder(resp.Body).Decode(&resBody)
-		if err != nil {
-			return []string{}, fmt.Errorf("json decode %w", err)
-		}
+	resp, err := instances[managementResourceIndex].httpClient.Get(url)
+	if err != nil {
+		return nil, err
 	}
-
 	defer resp.Body.Close()
+
+	// Decode the response body to the standard error format
+	if err := json.NewDecoder(resp.Body).Decode(&resBody); err != nil {
+		return []string{}, fmt.Errorf("json decode %w", err)
+	}
 
 	return a.retrieveTenantIDsFromErrMsg(resBody.Error.Message), nil
 }
