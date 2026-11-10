@@ -52,16 +52,11 @@ func AddMemberToGroupID(groupID string, emailID string) error {
 
 // RemoveMemberFromGroupID removes a member (by emailID) from the group of given groupID
 func RemoveMemberFromGroupID(groupID string, emailID string) error {
-	membership, err := CheckGroupMembershipForEmailIDs(groupID, emailID)
+	name, err := lookupMembershipName(groupID, emailID)
 	if err != nil {
 		return err
 	}
 
-	svc := instance.CloudIdentityService
-	_, err = svc.Groups.Memberships.Delete(membership.Name).Do()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err = instance.CloudIdentityService.Groups.Memberships.Delete(name).Do()
+	return err
 }

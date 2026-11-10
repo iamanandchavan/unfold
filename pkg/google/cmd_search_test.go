@@ -32,13 +32,13 @@ func Test_commandSearchConfig_Execute(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group"}`)),
 				},
-				"/v1/groups/test-group/memberships": {
+				"/v1/groups/test-group/memberships:lookup": {
 					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(`{"memberships": [{"name": "groups/test-group/memberships/abc", "preferredMemberKey": {"id": "test-id-0"}, "roles": [{"name": "MEMBER"}]}], "nextPageToken": "token"}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group/memberships/xyz"}`)),
 				},
-				"https://cloudidentity.googleapis.com/v1/groups/test-group/memberships?alt=json&pageSize=100&pageToken=token&prettyPrint=false": {
+				"/v1/groups/test-group/memberships/xyz": {
 					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(`{"memberships": [{"name": "groups/test-group/memberships/xyz", "preferredMemberKey": {"id": "test-id"}, "roles": [{"name": "MEMBER"}]}],"nextPageToken": ""}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group/memberships/xyz", "preferredMemberKey": {"id": "test-id"}, "roles": [{"name": "MEMBER"}]}`)),
 				},
 			},
 			want: "emailID is found to be " + helpers.GreenValue("MEMBER") + " of the group with membership name " + helpers.GreenValue("groups/test-group/memberships/xyz"),
@@ -66,14 +66,6 @@ func Test_commandSearchConfig_Execute(t *testing.T) {
 				"/v1/groups:lookup": {
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group"}`)),
-				},
-				"/v1/groups/test-group/memberships": {
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(`{"memberships": [{"name": "groups/test-group/memberships/abc", "preferredMemberKey": {"id": "test-id-0"}, "roles": [{"name": "MEMBER"}]}], "nextPageToken": "token"}`)),
-				},
-				"https://cloudidentity.googleapis.com/v1/groups/test-group/memberships?alt=json&pageSize=100&pageToken=token&prettyPrint=false": {
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(`{"memberships": [{"name": "groups/test-group/memberships/xyz", "preferredMemberKey": {"id": "test-id-1"}, "roles": [{"name": "MEMBER"}]}],"nextPageToken": ""}`)),
 				},
 			},
 			want: "member not found",
