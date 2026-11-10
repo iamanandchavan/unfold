@@ -1,7 +1,6 @@
 package azure
 
 import (
-	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -11,6 +10,8 @@ import (
 	"golang.org/x/oauth2"
 	oauth2cc "golang.org/x/oauth2/clientcredentials"
 	"gopkg.in/yaml.v2"
+
+	"github.com/aryannr97/unfold/pkg/helpers"
 )
 
 const (
@@ -96,10 +97,11 @@ func (c *AZConfig) NewService(resourceIndex int) (*AZService, error) {
 		return nil, fmt.Errorf("unable to load Azure identity CA certs: %w", err)
 	}
 
+	ctx := helpers.OAuthContext()
 	return &AZService{
 		BaseURL:         c.Resources[resourceIndex],
 		Publisher:       c.Publisher,
-		httpClient:      oauthConf.Client(context.TODO()),
+		httpClient:      helpers.NewOAuthClient(ctx, oauthConf.TokenSource(ctx)),
 		IdentityCACerts: certs,
 	}, nil
 }

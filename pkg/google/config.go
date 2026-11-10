@@ -5,10 +5,11 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	cloudidentity "google.golang.org/api/cloudidentity/v1"
 	"google.golang.org/api/option"
+
+	"github.com/aryannr97/unfold/pkg/helpers"
 )
 
 // ProviderShortName is short_name for google compute engine provider in DB.
@@ -38,7 +39,7 @@ func (c GCEConfig) NewService() (*Service, error) {
 	Config.ServiceAccountKeyFile = os.Getenv("GOOGLE_KEYFILE")
 
 	var err error
-	var ctx = context.Background()
+	ctx := helpers.OAuthContext()
 
 	// get the serviceAccountKeyFile
 	jsonCredentials, err := os.ReadFile(Config.ServiceAccountKeyFile)
@@ -52,9 +53,8 @@ func (c GCEConfig) NewService() (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse service account key file to config: %v", err)
 	}
-	ts := config.TokenSource(ctx)
-
-	opts := []option.ClientOption{option.WithTokenSource(ts)}
+	// Bound both token and API requests by the configured HTTP timeout.
+	opts := []option.ClientOption{option.WithHTTPClient(helpers.NewOAuthClient(ctx, config.TokenSource(ctx)))}
 
 	// if clientOpts is set, use it to get the client options
 	if Config.clientOpts != nil {
