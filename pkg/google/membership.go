@@ -1,50 +1,41 @@
 package google
 
 import (
-	"fmt"
-	"strings"
+	"errors"
+	"net/http"
 
 	"google.golang.org/api/cloudidentity/v1"
+	"google.golang.org/api/googleapi"
 )
 
-// CheckGroupMembershipForEmailIDs determines if the given emailIDs are already
-// a member in the google-group with given groupID and divides them into an existing and noexisting list
-// accordingly.
-func CheckGroupMembershipForEmailIDs(groupID string, emailID string) (found *cloudidentity.Membership, hErr error) {
-	// Get Group by groupID
-	g, hErr := GetGroupByID(groupID)
-	if hErr != nil {
-		return nil, hErr
+// errMemberNotFound is returned when the email is not a member of the group.
+var errMemberNotFound = errors.New("member not found")
+
+// lookupMembershipName returns the resource name of the membership of emailID in
+// the group with given groupID, with a single lookup call instead of listing members.
+func lookupMembershipName(groupID string, emailID string) (string, error) {
+	g, err := GetGroupByID(groupID)
+	if err != nil {
+		return "", err
 	}
 
-	svc := instance.CloudIdentityService
-	var nextPageToken string
-	memberships := []*cloudidentity.Membership{}
-
-	for {
-		call := svc.Groups.Memberships.List(g.Name).PageSize(100)
-		if nextPageToken != "" {
-			call.PageToken(nextPageToken)
+	res, err := instance.CloudIdentityService.Groups.Memberships.Lookup(g.Name).MemberKeyId(emailID).Do()
+	if err != nil {
+		var apiErr *googleapi.Error
+		if errors.As(err, &apiErr) && apiErr.Code == http.StatusNotFound {
+			return "", errMemberNotFound
 		}
-
-		resp, err := call.Do()
-		if err != nil {
-			return nil, err
-		}
-
-		memberships = append(memberships, resp.Memberships...)
-
-		if resp.NextPageToken == "" {
-			break
-		}
-		nextPageToken = resp.NextPageToken
+		return "", err
 	}
+	return res.Name, nil
+}
 
-	for _, m := range memberships {
-		if strings.EqualFold(m.PreferredMemberKey.Id, strings.ToLower(emailID)) {
-			return m, nil
-		}
+// CheckGroupMembershipForEmailIDs returns the membership of the given emailID in
+// the google-group with given groupID, or an error if it is not a member.
+func CheckGroupMembershipForEmailIDs(groupID string, emailID string) (*cloudidentity.Membership, error) {
+	name, err := lookupMembershipName(groupID, emailID)
+	if err != nil {
+		return nil, err
 	}
-
-	return nil, fmt.Errorf("member not found")
+	return instance.CloudIdentityService.Groups.Memberships.Get(name).Do()
 }

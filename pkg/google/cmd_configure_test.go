@@ -66,9 +66,9 @@ func Test_commandConfigureConfig_Execute(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group"}`)),
 				},
-				"/v1/groups/test-group/memberships": {
+				"/v1/groups/test-group/memberships:lookup": {
 					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(`{"memberships": [{"name": "groups/test-group/memberships/xyz", "preferredMemberKey": {"id": "test-id"}, "roles": [{"name": "MEMBER"}]}],"nextPageToken": ""}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group/memberships/xyz"}`)),
 				},
 				"/v1/groups/test-group/memberships/xyz": {
 					StatusCode: http.StatusOK,
@@ -98,9 +98,9 @@ func Test_commandConfigureConfig_Execute(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group"}`)),
 				},
-				"/v1/groups/test-group/memberships": {
+				"/v1/groups/test-group/memberships:lookup": {
 					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(`{"memberships": [{"name": "groups/test-group/memberships/xyz", "preferredMemberKey": {"id": "test-id"}, "roles": [{"name": "MEMBER"}]}],"nextPageToken": ""}`)),
+					Body:       io.NopCloser(bytes.NewBufferString(`{"name": "groups/test-group/memberships/xyz"}`)),
 				},
 			},
 			httpCallError: errors.New("http call error"),
