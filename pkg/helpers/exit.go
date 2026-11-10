@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/aryannr97/unfold/pkg/spinner"
@@ -15,7 +14,7 @@ func GracefullyExit() {
 	spinner.ShowCursor()
 	err := recover()
 	if err != nil {
-		fmt.Printf("\r \r")
+		spinner.ClearLine()
 		log.Println(err)
 	}
 }

@@ -1,6 +1,7 @@
 package spinner
 
 import (
+	"io"
 	"os"
 	"reflect"
 	"syscall"
@@ -99,6 +100,7 @@ func Test_Spinner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := Get(BrailDot)
 			s.exitFunc = tt.exitFunc
+			s.out, s.enabled = io.Discard, true
 			go s.Start()
 			tt.runTime(s)
 			time.Sleep(1 * time.Second)
