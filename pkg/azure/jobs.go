@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/aryannr97/unfold/pkg/helpers"
 )
 
 // MSEnableAccountsRes represents the enable accounts response
@@ -24,6 +26,9 @@ type MSErrorResp struct {
 
 // GetAzureJobStatus calls the MS service to get the status of the Job
 func GetAzureJobStatus(jobID string) string {
+	if !helpers.IsGUID(jobID) {
+		return "job id must be a GUID"
+	}
 	reqURL := fmt.Sprintf("/rp/product-ingestion/configure/%s/status?$version=2022-07-01", jobID)
 	url := instances[graphResourceIndex].BaseURL + reqURL
 

@@ -2,9 +2,12 @@ package azure
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/aryannr97/unfold/pkg/helpers"
 )
 
 // tenantFinder uses regex to find tenant ids from azure api response
@@ -58,6 +61,9 @@ func (a *TenantFinder) retrieveTenantIDsFromErrMsg(msg string) []string {
 // GetTenantBySubscriptionID calls azure API to get tenantID specific to subscription id.
 // It works on the recommended logic from Microsoft to apply regex on error response of the API.
 func (a *TenantFinder) GetTenantBySubscriptionID(id string) ([]string, error) {
+	if !helpers.IsGUID(id) {
+		return nil, errors.New("subscription id must be a GUID")
+	}
 	resBody := ErrResponse{}
 	reqURL := fmt.Sprintf("/subscriptions/%s?api-version=2022-12-01", id)
 

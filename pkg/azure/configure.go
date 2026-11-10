@@ -48,6 +48,10 @@ type LoggerObj struct {
 
 // MakeConfigurationRequest decides type of audience to be used for syncing and make request to Azure
 func MakeConfigurationRequest(image, id, audType, mode string) string {
+	if _, ok := config.Offers[image]; !ok {
+		return fmt.Sprintf("unknown offer %q", image)
+	}
+
 	loggerObj := LoggerObj{}
 
 	audienceList := []MSProperty{}
