@@ -73,3 +73,10 @@ func TestOAuthContextTimesOutTokenRequests(t *testing.T) {
 		t.Errorf("token request took %v, want it bounded by the 100ms timeout", elapsed)
 	}
 }
+
+func TestNewOAuthClientDoesNotUseDeprecatedCancelRequest(t *testing.T) {
+	client := NewOAuthClient(OAuthContext(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "t"}))
+	if _, ok := client.Transport.(interface{ CancelRequest(*http.Request) }); ok {
+		t.Error("client transport exposes CancelRequest; oauth2 logs a deprecation warning when a timeout cancels a request")
+	}
+}

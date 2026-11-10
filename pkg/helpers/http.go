@@ -32,5 +32,8 @@ func OAuthContext() context.Context {
 func NewOAuthClient(ctx context.Context, ts oauth2.TokenSource) *http.Client {
 	client := oauth2.NewClient(ctx, ts)
 	client.Timeout = HTTPTimeout()
+	// Hide oauth2.Transport's deprecated CancelRequest (it only logs a warning)
+	// so the client cancels timed-out requests through the request context.
+	client.Transport = struct{ http.RoundTripper }{client.Transport}
 	return client
 }
