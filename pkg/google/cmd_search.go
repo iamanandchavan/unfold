@@ -3,9 +3,11 @@ package google
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/aryannr97/unfold/pkg/commands"
 	"github.com/aryannr97/unfold/pkg/helpers"
+	cloudidentity "google.golang.org/api/cloudidentity/v1"
 )
 
 // commandSearchConfig represents the configuration for the search command
@@ -25,9 +27,21 @@ func (c commandSearchConfig) Execute() string {
 			return fmt.Sprintf("[unfold] %s", err.Error())
 		}
 
-		return fmt.Sprintf("[unfold] emailID is found to be %s of the group with membership name %s", helpers.GreenValue(found.Roles[0].Name), helpers.GreenValue(found.Name))
+		return fmt.Sprintf("[unfold] emailID is found to be %s of the group with membership name %s", helpers.GreenValue(roleNames(found.Roles)), helpers.GreenValue(found.Name))
 	}
 	return "[unfold] something went wrong"
+}
+
+// roleNames joins the membership role names, e.g. "MEMBER,OWNER", or "NONE" when there are none.
+func roleNames(roles []*cloudidentity.MembershipRole) string {
+	if len(roles) == 0 {
+		return "NONE"
+	}
+	names := make([]string, len(roles))
+	for i, r := range roles {
+		names[i] = r.Name
+	}
+	return strings.Join(names, ",")
 }
 
 // GetFlagSet returns the flag set for the search command
