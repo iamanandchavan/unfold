@@ -93,28 +93,26 @@ func MakeConfigurationRequest(image, id, audType, mode string) string {
 func prepareRequestBody(image string, plans []string, audienceList []MSProperty, mode string) MSGraphEnableAccount {
 	body := MSGraphEnableAccount{
 		Schema:    "https://schema.mp.microsoft.com/schema/configure/2022-03-01-preview2",
-		Resources: []MSResource{},
+		Resources: make([]MSResource, 0, len(plans)),
 	}
 
+	// Only one side of the private audience change may carry the ids;
+	// sending them in both add and remove makes the request ambiguous.
+	audiences := MSPrivateAudience{Add: []MSProperty{}, Remove: []MSProperty{}}
+	if mode == RemoveMode {
+		audiences.Remove = audienceList
+	} else {
+		audiences.Add = audienceList
+	}
+
+	product := "product/" + config.Offers[image].ProductDurableID
 	for _, planID := range plans {
-		resource := MSResource{
-			Schema:  "https://schema.mp.microsoft.com/schema/price-and-availability-update-private-audiences/2022-03-01-preview2",
-			Product: "product/" + config.Offers[image].ProductDurableID,
-			Plan:    planID,
-			PrivateAudiences: MSPrivateAudience{
-				Add:    audienceList,
-				Remove: []MSProperty{},
-			},
-		}
-
-		switch mode {
-		case "add":
-			resource.PrivateAudiences.Add = audienceList
-		case "remove":
-			resource.PrivateAudiences.Remove = audienceList
-		}
-
-		body.Resources = append(body.Resources, resource)
+		body.Resources = append(body.Resources, MSResource{
+			Schema:           "https://schema.mp.microsoft.com/schema/price-and-availability-update-private-audiences/2022-03-01-preview2",
+			Product:          product,
+			Plan:             planID,
+			PrivateAudiences: audiences,
+		})
 	}
 
 	return body
